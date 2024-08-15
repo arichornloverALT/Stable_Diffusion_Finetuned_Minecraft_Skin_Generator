@@ -1,9 +1,43 @@
 name: Stable Diffusion Minecraft Skin Generator
 
 on:
-  push:
-    branches:
-      - main
+  workflow_dispatch:
+    inputs:
+      prompt:
+        description: 'Your prompt for the skin generation'
+        required: true
+      sd_model:
+        description: 'Stable Diffusion Model Version (2/xl, xl understands better prompts)'
+        required: true
+        default: 'xl'
+      num_inference_steps:
+        description: 'Number of inference steps (more integer value = better but longer process)'
+        required: true
+        default: '50'
+      guidance_scale:
+        description: 'Guidance scale (how much the output adheres to the prompt)'
+        required: true
+        default: '7.5'
+      model_precision_type:
+        description: 'Model precision type (fp16 for faster or fp32 for more precision)'
+        required: true
+        default: 'fp16'
+      seed:
+        description: 'Seed (an integer or 0 for random)'
+        required: true
+        default: '0'
+      filename:
+        description: 'Output filename with .png extension'
+        required: true
+        default: 'generated_skin.png'
+      model_3d:
+        description: 'See the skin also as a 3D Model? (y/n)'
+        required: true
+        default: 'n'
+      verbose:
+        description: 'Produce Verbose (detailed) Output? (y/n)'
+        required: true
+        default: 'n'
 
 jobs:
   generate-skin:
@@ -25,25 +59,15 @@ jobs:
 
       - name: Generate skin
         run: |
-          prompt="Enter your prompt:"
-          sd_model="Enter the Stable Diffusion Model Version (2/xl, xl understands better prompts):"
-          num_inference_steps="Enter the number of inference steps (more integer value = better but longer process):"
-          guidance_scale="Enter the guidance scale (how much the output is adherent to the prompt):"
-          model_precision_type="Enter the model precision type (fp16 which is faster or fp32 which is more precise but more resource consuming):"
-          seed="Enter the seed (A starting point to initiate the generation process, put an integer or 0 for random):"
-          filename="Enter the output filename with .png extension:"
-          model_3d="See the skin also as a 3D Model? (y/n):"
-          verbose="Produce Verbose (detailed) Output? (y/n):"
-
-          read -p "$prompt" prompt
-          read -p "$sd_model" sd_model
-          read -p "$num_inference_steps" num_inference_steps
-          read -p "$guidance_scale" guidance_scale
-          read -p "$model_precision_type" model_precision_type
-          read -p "$seed" seed
-          read -p "$filename" filename
-          read -p "$model_3d" model_3d
-          read -p "$verbose" verbose
+          prompt="{{{ inputs.prompt }}}"
+          sd_model="{{{ inputs.sd_model }}}"
+          num_inference_steps="{{{ inputs.num_inference_steps }}}"
+          guidance_scale="{{{ inputs.guidance_scale }}}"
+          model_precision_type="{{{ inputs.model_precision_type }}}"
+          seed="{{{ inputs.seed }}}"
+          filename="{{{ inputs.filename }}}"
+          model_3d="{{{ inputs.model_3d }}}"
+          verbose="{{{ inputs.verbose }}}"
 
           if [[ "$sd_model" == "2" ]]; then
             sd_model_version="minecraft-skins"
