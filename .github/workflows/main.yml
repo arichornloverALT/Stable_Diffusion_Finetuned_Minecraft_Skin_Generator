@@ -1,13 +1,10 @@
 name: Stable Diffusion Minecraft Skin Generator
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 jobs:
-  generate_skin:
+  generate-skin:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -20,18 +17,70 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m venv .venv
-          source .venv/bin/activate
-          pip install -r requirements_ui.txt
+          python -m venv venv_no_ui
+          source venv_no_ui/bin/activate
+          pip install -r Scripts/requirements_no_ui.txt
 
-      - name: Generate Skin
+      - name: Run script
         run: |
-          source .venv/bin/activate
-          python Scripts/Run_Inference_UI.py --prompt "A Minecraft skin of a cool astronaut" --sd_model xl --num_inference_steps 50 --guidance_scale 7.5 --model_precision_type fp16 --seed 42 --filename output.png --model_3d y --verbose y
+          source venv_no_ui/bin/activate
+          python Scripts/minecraft-skins.py "${{ secrets.PROMPT }}" 50 7.5 fp16 0 "output.png" --model_3d --verbose
           deactivate
 
-      - name: Upload Artifacts
+      - name: Upload artifacts
         uses: actions/upload-artifact@v4
         with:
           name: generated-skin
           path: output.png
+
+  generate-skin-sdxl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv_no_ui
+          source venv_no_ui/bin/activate
+          pip install -r Scripts/requirements_no_ui.txt
+
+      - name: Run script
+        run: |
+          source venv_no_ui/bin/activate
+          python Scripts/minecraft-skins-sdxl.py "${{ secrets.PROMPT }}" 50 7.5 fp16 0 "output.png" --model_3d --verbose
+          deactivate
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: generated-skin
+          path: output.png
+
+  generate-skin-ui:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv_ui
+          source venv_ui/bin/activate
+          pip install -r Scripts/requirements_ui.txt
+
+      - name: Run script
+        run: |
+          source venv_ui/bin/activate
+          python Scripts/Run_Inference_UI.py
+          deactivate
