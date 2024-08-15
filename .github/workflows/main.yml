@@ -1,10 +1,13 @@
 name: Stable Diffusion Minecraft Skin Generator
 
 on:
+  push:
+    branches:
+      - main
   workflow_dispatch:
 
 jobs:
-  generate-skin:
+  generate_skin:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -13,72 +16,22 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: 3.10
+          python-version: '3.10'
 
       - name: Install dependencies
         run: |
-          python -m venv venv_no_ui
-          source venv_no_ui/bin/activate
-          pip install -r Scripts/requirements_no_ui.txt
+          python -m venv .venv
+          source .venv/bin/activate
+          pip install -r requirements.txt
 
-      - name: Generate skin
+      - name: Generate Skin
         run: |
-          source venv_no_ui/bin/activate
-          read -p "Enter your prompt: " prompt
-          read -p "Enter the Stable Diffusion Model Version (2/xl, xl understands better prompts): " sd_model
-          read -p "Enter the number of inference steps (more integer value = better but longer process): " num_inference_steps
-          read -p "Enter the guidance scale (how much the output adheres to the prompt): " guidance_scale
-          read -p "Enter the model precision type (fp16 for faster or fp32 for more precision): " model_precision_type
-          read -p "Enter the seed (an integer or 0 for random): " seed
-          read -p "Enter the output filename with .png extension: " filename
-          read -p "See the skin also as a 3D Model? (y/n): " model_3d
-          read -p "Produce Verbose (detailed) Output? (y/n): " verbose
+          source .venv/bin/activate
+          python Scripts/Run_Inference_UI.py --prompt "A Minecraft skin of a cool astronaut" --sd_model xl --num_inference_steps 50 --guidance_scale 7.5 --model_precision_type fp16 --seed 42 --filename output.png --model_3d y --verbose y
+          deactivate
 
-          if [[ "$sd_model" == "2" ]]; then
-            sd_model_version="minecraft-skins"
-          else
-            sd_model_version="minecraft-skins-sdxl"
-          fi
-
-          if [[ "$verbose" == "y" ]]; then
-            verbose_flag="--verbose"
-          else
-            verbose_flag=""
-          fi
-
-          if [[ "$model_3d" == "y" ]]; then
-            model_3d_flag="--model_3d"
-          else
-            model_3d_flag=""
-          fi
-
-          python Scripts/"$sd_model_version".py "$prompt" "$num_inference_steps" "$guidance_scale" "$model_precision_type" "$seed" "$filename" "$model_3d_flag" "$verbose_flag"
-
-      - name: Deactivate environment
-        run: deactivate
-
-  generate-skin-ui:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v3
+      - name: Upload Artifacts
+        uses: actions/upload-artifact@v4
         with:
-          python-version: 3.8
-
-      - name: Install dependencies
-        run: |
-          python -m venv venv_ui
-          source venv_ui/bin/activate
-          pip install -r Scripts/requirements_ui.txt
-          pip install gradio
-
-      - name: Generate skin with UI
-        run: |
-          source venv_ui/bin/activate
-          python Scripts/Run_Inference_UI.py
-
-      - name: Deactivate environment
-        run: deactivate
+          name: generated-skin
+          path: output.png
