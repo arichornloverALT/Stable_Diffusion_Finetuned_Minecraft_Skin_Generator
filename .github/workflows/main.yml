@@ -1,57 +1,81 @@
-name: Stable Diffusion Minecraft Skin Generation
+name: Stable Diffusion Minecraft Skin Generator
 
 on:
-  workflow_dispatch:
+  push:
+    branches:
+      - main
 
 jobs:
   generate-skin:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v3
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v4
         with:
           python-version: '3.10'
 
       - name: Install dependencies
         run: |
-          python -m venv venv_no_ui
-          source venv_no_ui/bin/activate
+          python -m venv .venv
+          source .venv/bin/activate
           pip install -r Scripts/requirements_no_ui.txt
 
-      - name: Run inference
+      - name: Generate skin
         run: |
-          python Scripts/minecraft-skins.py \
-            "$prompt" \
-            "$num_inference_steps" \
-            "$guidance_scale" \
-            "$model_precision_type" \
-            "$seed" \
-            "$filename" \
-            "$model_3d_flag" \
-            "$verbose_flag"
+          prompt="Enter your prompt:"
+          sd_model="Enter the Stable Diffusion Model Version (2/xl, xl understands better prompts):"
+          num_inference_steps="Enter the number of inference steps (more integer value = better but longer process):"
+          guidance_scale="Enter the guidance scale (how much the output is adherent to the prompt):"
+          model_precision_type="Enter the model precision type (fp16 which is faster or fp32 which is more precise but more resource consuming):"
+          seed="Enter the seed (A starting point to initiate the generation process, put an integer or 0 for random):"
+          filename="Enter the output filename with .png extension:"
+          model_3d="See the skin also as a 3D Model? (y/n):"
+          verbose="Produce Verbose (detailed) Output? (y/n):"
 
-      - name: Create release draft
+          read -p "$prompt" prompt
+          read -p "$sd_model" sd_model
+          read -p "$num_inference_steps" num_inference_steps
+          read -p "$guidance_scale" guidance_scale
+          read -p "$model_precision_type" model_precision_type
+          read -p "$seed" seed
+          read -p "$filename" filename
+          read -p "$model_3d" model_3d
+          read -p "$verbose" verbose
+
+          if [[ "$sd_model" == "2" ]]; then
+            sd_model_version="minecraft-skins"
+          else
+            sd_model_version="minecraft-skins-sdxl"
+          fi
+
+          if [[ "$verbose" == "y" ]]; then
+            verbose_flag="--verbose"
+          else
+            verbose_flag=""
+          fi
+
+          if [[ "$model_3d" == "y" ]]; then
+            model_3d_flag="--model_3d"
+          else
+            model_3d_flag=""
+          fi
+
+          python Scripts/"$sd_model_version".py "$prompt" "$num_inference_steps" "$guidance_scale" "$model_precision_type" "$seed" "$filename" "$model_3d_flag" "$verbose_flag"
+
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ${{ filename }}
-          asset_name: ${{ filename }}
-          asset_content_type: image/png
-          tag: 'v1.0.0'
-          name: 'Stable Diffusion Minecraft Skin'
-          body: 'Generated using Stable Diffusion'
           draft: true
-      - name: Create Release
-        id: create_release
-        uses: softprops/action-gh-release@v2
-        with:
-          tag_name: 'v1.0.0'
-          release_name: 'Stable Diffusion Minecraft Skin'
-          body: 'Generated using Stable Diffusion'
-          draft: true
+          tag_name: 'v${{ runner.os }}-skin-${{ github.run_number }}'
+          name: 'Generated Skin - ${{ runner.os }} - ${{ github.run_number }}'
+          body: 'Generated skin using Stable Diffusion.'
+          prerelease: true
+          files: ${{ runner.workspace }}/${filename} 
 
-      - name: Deactivate virtual environment
-        run: deactivate
+      - name: Cleanup
+        run: |
+          deactivate
+          rm -rf .venv
