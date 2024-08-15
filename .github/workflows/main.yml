@@ -1,0 +1,46 @@
+name: Run Inference
+
+on:
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.10
+
+      - name: Install dependencies
+        run: |
+          python -m venv venv_no_ui
+          source venv_no_ui/bin/activate
+          pip install -r Scripts/requirements_no_ui.txt
+
+      - name: Run inference script
+        run: |
+          source venv_no_ui/bin/activate
+          python Scripts/minecraft-skins.py "a cute Minecraft skin" 50 7.5 fp16 0 output.png --model_3d --verbose
+          deactivate
+
+      - name: Install dependencies for UI
+        run: |
+          python -m venv venv_ui
+          source venv_ui/bin/activate
+          pip install -r Scripts/requirements_ui.txt
+
+      - name: Run UI script
+        run: |
+          source venv_ui/bin/activate
+          python Scripts/Run_Inference_UI.py
+          deactivate
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: output
+          path: output.png
