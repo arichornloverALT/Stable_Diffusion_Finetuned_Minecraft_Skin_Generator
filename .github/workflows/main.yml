@@ -1,4 +1,4 @@
-name: Stable Diffusion Minecraft Skin Generator
+name: Stable Diffusion Minecraft Skin Generation
 
 on:
   workflow_dispatch:
@@ -21,66 +21,37 @@ jobs:
           source venv_no_ui/bin/activate
           pip install -r Scripts/requirements_no_ui.txt
 
-      - name: Run script
+      - name: Run inference
         run: |
-          source venv_no_ui/bin/activate
-          python Scripts/minecraft-skins.py "${{ secrets.PROMPT }}" 50 7.5 fp16 0 "output.png" --model_3d --verbose
-          deactivate
+          python Scripts/minecraft-skins.py \
+            "$prompt" \
+            "$num_inference_steps" \
+            "$guidance_scale" \
+            "$model_precision_type" \
+            "$seed" \
+            "$filename" \
+            "$model_3d_flag" \
+            "$verbose_flag"
 
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+      - name: Create release draft
+        uses: softprops/action-gh-release@v2
         with:
-          name: generated-skin
-          path: output.png
-
-  generate-skin-sdxl:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ${{ filename }}
+          asset_name: ${{ filename }}
+          asset_content_type: image/png
+          tag: 'v1.0.0'
+          name: 'Stable Diffusion Minecraft Skin'
+          body: 'Generated using Stable Diffusion'
+          draft: true
+      - name: Create Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
         with:
-          python-version: '3.10'
+          tag_name: 'v1.0.0'
+          release_name: 'Stable Diffusion Minecraft Skin'
+          body: 'Generated using Stable Diffusion'
+          draft: true
 
-      - name: Install dependencies
-        run: |
-          python -m venv venv_no_ui
-          source venv_no_ui/bin/activate
-          pip install -r Scripts/requirements_no_ui.txt
-
-      - name: Run script
-        run: |
-          source venv_no_ui/bin/activate
-          python Scripts/minecraft-skins-sdxl.py "${{ secrets.PROMPT }}" 50 7.5 fp16 0 "output.png" --model_3d --verbose
-          deactivate
-
-      - name: Upload artifacts
-        uses: actions/upload-artifact@v4
-        with:
-          name: generated-skin
-          path: output.png
-
-  generate-skin-ui:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.10'
-
-      - name: Install dependencies
-        run: |
-          python -m venv venv_ui
-          source venv_ui/bin/activate
-          pip install -r Scripts/requirements_ui.txt
-
-      - name: Run script
-        run: |
-          source venv_ui/bin/activate
-          python Scripts/Run_Inference_UI.py
-          deactivate
+      - name: Deactivate virtual environment
+        run: deactivate
