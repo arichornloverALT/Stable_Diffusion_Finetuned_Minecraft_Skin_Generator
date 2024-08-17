@@ -58,6 +58,8 @@ jobs:
           pip install -r Scripts/requirements_no_ui.txt
           pip install -r Scripts/requirements_ui.txt
           pip install accelerate transformers diffusers minepi numpy torch scipy pygltflib 
+          pip install --upgrade pip
+          pip freeze
 
       - name: Generate skin
         run: |
